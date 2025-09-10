@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateVideoFromPrompt } from '../services/geminiService';
-import Loader from './Loader';
-import ErrorMessage from './ErrorMessage';
-import ExamplePrompts from './ExamplePrompts';
-import ImageUploader from './ImageUploader';
-import type { UploadedImage } from './ImageUploader';
+import { generateVideoFromPrompt } from '../services/geminiService.ts';
+import Loader from './Loader.tsx';
+import ErrorMessage from './ErrorMessage.tsx';
+import ExamplePrompts from './ExamplePrompts.tsx';
+import ImageUploader from './ImageUploader.tsx';
+import type { UploadedImage } from './ImageUploader.tsx';
 
 const VideoGenerator: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
