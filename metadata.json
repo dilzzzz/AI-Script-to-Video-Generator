@@ -1,0 +1,5 @@
+{
+  "name": "AI Script to Video Generator",
+  "description": "An application that generates a video from a text script using Google's VEO 2.0 AI model. Simply enter your prompt and watch your story come to life.",
+  "requestFramePermissions": []
+}
