@@ -9,9 +9,10 @@ const getAiClient = () => {
         return ai;
     }
     
-    // Safely access the API key. In a Vercel environment, this will be populated from environment variables.
-    // In a direct browser environment without a server, this will be undefined.
-    const API_KEY = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+    // Safely access the API key using optional chaining to prevent crashes in the browser.
+    // In a Vercel environment, this will be populated from environment variables for server-side code.
+    // For this static client-side app, it will be undefined, and the error will be thrown on-click.
+    const API_KEY = (typeof process?.env?.API_KEY === 'string') ? process.env.API_KEY : undefined;
 
     if (!API_KEY) {
         // This error will now only happen when the user clicks "Generate", which is much better.
