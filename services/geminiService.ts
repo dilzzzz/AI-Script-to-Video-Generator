@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Safely access the API key to prevent crashing in a browser environment where `process` is not defined.
+const API_KEY = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+
+const ai = new GoogleGenAI({ apiKey: API_KEY as string });
 
 const LOADING_MESSAGES = [
     "Sending your vision to the AI director...",
@@ -29,8 +32,8 @@ export const generateVideoFromPrompt = async (
     durationSecs: number,
     image: ImageData | null = null
 ): Promise<string> => {
-    if (!process.env.API_KEY) {
-        throw new Error("API_KEY environment variable not set.");
+    if (!API_KEY) {
+        throw new Error("API_KEY environment variable not set or not accessible in this environment.");
     }
     
     try {
@@ -76,7 +79,7 @@ export const generateVideoFromPrompt = async (
         onProgress("Downloading generated video...");
 
         // The download link requires the API key to be appended
-        const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+        const response = await fetch(`${downloadLink}&key=${API_KEY}`);
         
         if (!response.ok) {
             throw new Error(`Failed to download video. Status: ${response.statusText}`);
