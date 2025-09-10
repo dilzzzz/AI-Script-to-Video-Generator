@@ -1,9 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Safely access the API key to prevent crashing in a browser environment where `process` is not defined.
-const API_KEY = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+// This variable will hold the initialized client.
+let ai: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({ apiKey: API_KEY as string });
+// Function to get the initialized AI client, creating it only if it doesn't exist.
+const getAiClient = () => {
+    if (ai) {
+        return ai;
+    }
+    
+    // Safely access the API key. In a Vercel environment, this will be populated from environment variables.
+    // In a direct browser environment without a server, this will be undefined.
+    const API_KEY = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+
+    if (!API_KEY) {
+        // This error will now only happen when the user clicks "Generate", which is much better.
+        throw new Error("API_KEY is not configured. Please ensure it is set in your Vercel environment variables.");
+    }
+    
+    ai = new GoogleGenAI({ apiKey: API_KEY });
+    return ai;
+}
+
 
 const LOADING_MESSAGES = [
     "Sending your vision to the AI director...",
@@ -32,11 +50,12 @@ export const generateVideoFromPrompt = async (
     durationSecs: number,
     image: ImageData | null = null
 ): Promise<string> => {
-    if (!API_KEY) {
-        throw new Error("API_KEY environment variable not set or not accessible in this environment.");
-    }
     
     try {
+        // Get the AI client here, just before we need it.
+        const localAi = getAiClient();
+        const apiKey = (localAi as any).apiKey; // A way to access the key for the download URL
+
         onProgress(LOADING_MESSAGES[0]);
 
         // Prepend the style to the prompt to guide the model
@@ -59,7 +78,7 @@ export const generateVideoFromPrompt = async (
             };
         }
 
-        let operation = await ai.models.generateVideos(params);
+        let operation = await localAi.models.generateVideos(params);
 
         let messageIndex = 1;
 
@@ -67,7 +86,7 @@ export const generateVideoFromPrompt = async (
             onProgress(LOADING_MESSAGES[messageIndex % LOADING_MESSAGES.length]);
             messageIndex++;
             await sleep(10000); // Poll every 10 seconds
-            operation = await ai.operations.getVideosOperation({ operation: operation });
+            operation = await localAi.operations.getVideosOperation({ operation: operation });
         }
 
         const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -79,7 +98,7 @@ export const generateVideoFromPrompt = async (
         onProgress("Downloading generated video...");
 
         // The download link requires the API key to be appended
-        const response = await fetch(`${downloadLink}&key=${API_KEY}`);
+        const response = await fetch(`${downloadLink}&key=${apiKey}`);
         
         if (!response.ok) {
             throw new Error(`Failed to download video. Status: ${response.statusText}`);
@@ -93,7 +112,7 @@ export const generateVideoFromPrompt = async (
     } catch (error: any) {
         console.error("Error generating video:", error);
         if (error.message.includes("API_KEY")) {
-             throw new Error("API Key is invalid or missing. Please check your setup.");
+             throw new Error("API Key is invalid or missing. Please check your Vercel environment variables.");
         }
         throw new Error(error.message || "An unexpected error occurred while communicating with the AI.");
     }
